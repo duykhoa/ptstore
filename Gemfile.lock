@@ -1,0 +1,62 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.5.2)
+      public_suffix (>= 2.0.2, < 4.0)
+    axiom-types (0.1.1)
+      descendants_tracker (~> 0.0.4)
+      ice_nine (~> 0.11.0)
+      thread_safe (~> 0.3, >= 0.3.1)
+    coderay (1.1.2)
+    coercible (1.0.0)
+      descendants_tracker (~> 0.0.1)
+    declarative (0.0.10)
+    declarative-option (0.1.0)
+    descendants_tracker (0.0.4)
+      thread_safe (~> 0.3, >= 0.3.1)
+    equalizer (0.0.11)
+    excon (0.59.0)
+    faraday (0.13.1)
+      multipart-post (>= 1.2, < 3)
+    faraday_middleware (0.12.2)
+      faraday (>= 0.7.4, < 1.0)
+    ice_nine (0.11.2)
+    method_source (0.9.0)
+    mimemagic (0.3.2)
+    multi_json (1.12.2)
+    multipart-post (2.0.0)
+    pry (0.11.1)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    public_suffix (3.0.0)
+    representable (3.0.4)
+      declarative (< 0.1.0)
+      declarative-option (< 0.2.0)
+      uber (< 0.2.0)
+    thread_safe (0.3.6)
+    tracker_api (1.8.0)
+      addressable
+      equalizer
+      excon
+      faraday
+      faraday_middleware
+      mimemagic
+      multi_json
+      representable
+      virtus
+    uber (0.1.0)
+    virtus (1.0.5)
+      axiom-types (~> 0.1)
+      coercible (~> 1.0)
+      descendants_tracker (~> 0.0, >= 0.0.3)
+      equalizer (~> 0.0, >= 0.0.9)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  pry
+  tracker_api
+
+BUNDLED WITH
+   1.16.0.pre.2
