@@ -1,0 +1,7 @@
+{
+  "name": "pt-insights",
+  "short_name": "pt-insights",
+  "description": "show insights from pt stories",
+  "start_url": "/",
+  "display": "standalone"
+}

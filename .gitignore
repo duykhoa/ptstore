@@ -1,2 +1,3 @@
-output*
 .config.yaml
+**/*/output*
+**/bower_components

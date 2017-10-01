@@ -1,0 +1,28 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<dom-module id="pt-feature-transition">
+  <template>
+    <template is="dom-repeat" items="{{features}}" as="feature">
+      <div>{{feature.name}}, {{feature.story_type}}</div>
+
+      <template is="dom-repeat" items="{{feature.transitions}}" as="transition">
+        <div>{{transition.state}}, {{transition.occurred_at}}</div>
+      </template>
+    </template>
+  </template>
+
+  <script>
+    class PtFeatureTransition extends Polymer.Element {
+      static get is() { return "pt-feature-transition"; }
+      static get properties() {
+        return {
+          features: {
+            type: Array,
+          },
+        };
+      }
+    }
+
+    window.customElements.define(PtFeatureTransition.is, PtFeatureTransition);
+  </script>
+</dom-module>

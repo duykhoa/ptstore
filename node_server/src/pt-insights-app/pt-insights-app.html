@@ -1,0 +1,85 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-styles/paper-styles.html">
+
+<link rel="import" href="./pt-story-count.html">
+<link rel="import" href="./pt-story-type-chart.html">
+<link rel="import" href="./pt-feature-by-point.html">
+<link rel="import" href="./pt-feature-transition.html">
+
+<dom-module id="pt-insights-app">
+  <template>
+    <style>
+      :host {
+        display: block;
+        @apply(--paper-font-code1);
+      }
+    </style>
+
+    <iron-ajax
+      auto
+      url="{{jsonDataUrl}}"
+      last-response="{{data}}"
+      handle-as="json"
+    ></iron-ajax>
+
+    <pt-story-count
+      stories="{{data}}"
+      bug-count="{{bugCount}}"
+      feature-count="{{featureCount}}"
+      chore-count="{{choreCount}}"
+    ></pt-story-count>
+
+    <!--
+      ANALYZE OUTPUTS
+    -->
+
+    <h2>SUMMARIZE ACCEPTED STORIES</h2>
+
+    <div>Bug Count: {{bugCount}}</div>
+    <div>Feature Count: {{featureCount}}</div>
+    <div>Chore Count: {{choreCount}}</div>
+    <div>TOTAL: {{total(bugCount, featureCount, choreCount)}}</div>
+
+    <pt-story-type-chart
+      bug-count="{{bugCount}}"
+      feature-count="{{featureCount}}"
+      chore-count="{{choreCount}}"
+    ></pt-story-type-chart>
+
+    <pt-feature-by-point
+      stories="{{data}}"
+      features="{{features}}"
+    ></pt-feature-by-point>
+
+    <pt-feature-transition
+      features="{{features}}"
+    ></pt-feature-transition>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class PtInsightsApp extends Polymer.Element {
+      static get is() { return "pt-insights-app"; }
+      static get properties() {
+        return {
+          jsonDataUrl: {
+            type: String,
+            value: "/data/output.json"
+          }
+        };
+      }
+
+      total(...values) {
+        return _.reduce(values, function(sum, val) {
+          return sum + val;
+        }, 0)
+      }
+    }
+
+    window.customElements.define(PtInsightsApp.is, PtInsightsApp);
+  </script>
+</dom-module>
