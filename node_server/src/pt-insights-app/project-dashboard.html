@@ -15,6 +15,10 @@
       :host {
         display: block;
       }
+
+      google-chart {
+        width: 100%;
+      }
     </style>
 
     <h1>[[project.name]]</h1>
@@ -45,7 +49,7 @@
 
             <marked-element markdown=[[item.description]] breaks></marked-element>
 
-            <h5>Duration: [[displayStoryDuration(item)]] | Point: [[item.estimate]]</h5>
+            <h5>Duration: [[displayStoryDuration(item, "started", "accepted")]] | Point: [[item.estimate]]</h5>
             <h5>Story transition</h5>
 
             <ul>
@@ -57,7 +61,12 @@
         </template>
 
         <vaadin-grid-column>
-          <template class="header">Name</template>
+          <template class="header">
+            <vaadin-grid-sorter path="name"></vaadin-grid-sorter>
+            <vaadin-grid-filter aria-label="Name" path="name" value="[[_filteredName]]">
+              <vaadin-text-field slot="filter" placeholder="Story Name" value="{{_filteredName}}" focus-target></vaadin-text-field>
+            </vaadin-grid-filter>
+          </template>
 
           <template>
             <span>[[item.name]]</span>
@@ -67,7 +76,7 @@
         <vaadin-grid-column flex-grow="0">
           <template class="header">
             <vaadin-grid-filter aria-label="Type" path="story_type" value="[[_filteredStoryType]]">
-               <vaadin-text-field slot="filter" placeholder="Story type" value="{{_filteredStoryType}}" focus-target></vaadin-text-field>
+              <vaadin-text-field slot="filter" placeholder="Story type" value="{{_filteredStoryType}}" focus-target></vaadin-text-field>
             </vaadin-grid-filter>
           </template>
 
@@ -93,12 +102,27 @@
 
     <h2> Story activity </h2>
     <div>
-      Rejection chart
       <google-chart
+        options='{"title": "Rejection rate chart"}'
         type="line"
-        data="[[rejectedCount(stories)]]"
+        data="[[rejectionData(stories)]]"
       ></google-chart>
+    </div>
 
+    <div>
+      <google-chart
+        options='{"title": "Feature Estimation Distribution"}'
+        type="line"
+        data="[[estimateData(stories)]]"
+      ></google-chart>
+    </div>
+
+    <div>
+      <google-chart
+        options='{"title": "Story Cycle Distribution"}'
+        type="line"
+        data="[[storyCycleData(stories)]]"
+      ></google-chart>
     </div>
 
   </template>
@@ -181,37 +205,70 @@
         })
       }
 
-      storyDuration(story) {
+      storyDuration(story, fromType, toType) {
         let transitions = story.transitions;
-        let startTransition = _.find(transitions, (tran) => {
-          return tran.state === "started";
+        let fromTransition = _.find(transitions, (tran) => {
+          return tran.state === fromType;
         });
 
-        let acceptedTransition = _.find(transitions, (tran) => {
-          return tran.state === "accepted";
+        let toTransition = _.findLast(transitions, (tran) => {
+          return tran.state === toType;
         });
 
-        return moment(acceptedTransition.occurred_at) - moment(startTransition.occurred_at);
+        if (toTransition && fromTransition) {
+          return moment(toTransition.occurred_at) - moment(fromTransition.occurred_at) + moment.duration(1, "day");
+        }
+        else {
+          return 0;
+        }
       }
 
-      displayStoryDuration(story) {
-        return moment.duration(this.storyDuration(story)).humanize();
+      displayStoryDuration(story, fromType, toType) {
+        return moment.duration(this.storyDuration(story, fromType, toType)).humanize();
       }
 
-      rejectedCount(stories) {
-        let _rejectionCount = _.countBy(stories, (story) => {
+      aggregateStoryByTransitionType(stories, type) {
+        return _.countBy(stories, (story) => {
           return _.select(story.transitions, (tran) => {
-            return tran.state === "rejected";l
+            return tran.state === type;
           }).length
         });
+      }
 
+      aggregateStoryByEstimate(stories) {
+        return _.countBy(stories, (story) => {
+          return story.estimate;
+        });
+      }
 
-        let result = [
+      rejectionData(stories) {
+        return [
           ["Rejected times", "Story count"],
-          ..._.map(_rejectionCount, (k,v) => { return [v,k]; })
+          ..._.map(this.aggregateStoryByTransitionType(stories, "rejected"), (k,v) => { return [v,k]; })
         ];
+      }
 
-        return result;
+      estimateData(stories) {
+        let features = this.storyByType(stories, "feature");
+
+        return [
+          ["No. points", "Story Count"],
+          ..._.map(this.aggregateStoryByEstimate(features), (k, v) => { return [v, k]; })
+        ]
+      }
+
+      storyCycleData(stories) {
+        return [
+          ["Story", "started - accepted", "unscheduled - started", "started - delivered", "delivered - accepted"],
+          ..._.map(this.storyByType(stories, "feature"), (story) => {
+            return [story.name,
+              moment.duration(this.storyDuration(story, "started", "accepted")).days(),
+              moment.duration(this.storyDuration(story, "unscheduled", "started")).days(),
+              moment.duration(this.storyDuration(story, "started", "delivered")).days(),
+              moment.duration(this.storyDuration(story, "delivered", "accepted")).days()
+            ];
+          })
+        ];
       }
     }
 
