@@ -7,9 +7,9 @@ require "yaml"
 require_relative "../lib/retriever"
 
 config = OpenStruct.new(YAML.load_file(".config.yaml"))
-
 accepted_after = config[:accepted_after]
 project_id     = config[:project_id]
+
 token          = config[:token]
 output         = config[:output]
 

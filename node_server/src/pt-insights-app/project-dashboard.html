@@ -1,0 +1,108 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/google-chart/google-chart.html">
+
+<link rel="import" href="./tracker-store.html">
+
+<dom-module id="project-dashboard">
+  <template>
+    <style is="custom-style">
+      :host {
+        display: block;
+      }
+
+      google-chart {
+        height: 400px;
+        width: 400px;
+      }
+    </style>
+
+    <h1>[[project.name]]</h1>
+    <h3>Stories Summary</h3>
+
+    <div>No. Stories: [[stories.length]]</div>
+    <div>No. Features: [[countStoryByType(stories, "feature")]]</div>
+    <div>No. Bugs: [[countStoryByType(stories, "bug")]]</div>
+    <div>No. Chores: [[countStoryByType(stories, "chore")]]</div>
+
+    <google-chart
+      type="pie"
+      data="{{rowsData(stories)}}"
+      options="[[options]]"
+    ></google-chart>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class ProjectDashboard extends ReduxMixin(ReduxAsyncMixin(Polymer.Element)) {
+      static get is() { return "project-dashboard"; }
+      static get properties() {
+        return {
+          project: {
+            type: Object
+          },
+
+          projectStories: {
+            type: Array,
+            observer: "_projectStoriesChanged",
+            statePath: "projectStories"
+          },
+
+          stories: {
+            type: Array,
+            computed: "_projectStories(projectStories, project)"
+          },
+
+          options: {
+            type: Object,
+            value: {
+              chartArea: {
+                width: "75%", height: "75%"
+              },
+            }
+          }
+        }
+      }
+
+      storyByType(stories, type) {
+        return _.filter(stories, (st) => {
+          return st.story_type == type;
+        });
+      }
+
+      countStoryByType(stories, type) {
+        return this.storyByType(stories, type).length;
+      }
+
+      rowsData(stories) {
+        let featureCount = this.countStoryByType(stories, "feature");
+        let bugCount = this.countStoryByType(stories, "bug");
+        let choreCount = this.countStoryByType(stories, "chore");
+
+        return [
+          ["Story Type", "No"],
+          ["Feature", featureCount],
+          ["Bug", bugCount],
+          ["Chore", choreCount]
+        ]
+      }
+
+      _projectStories(projectStories, project) {
+        let _projectStories = _.find(this.projectStories, (pSt) => {
+          return pSt.projectId === project.id;
+        });
+
+        if (_projectStories)
+          return _projectStories.stories;
+      }
+
+      _projectStoriesChanged(projectStories) {
+        console.log(projectStories);
+      }
+    }
+
+    window.customElements.define(ProjectDashboard.is, ProjectDashboard);
+  </script>
+</dom-module>

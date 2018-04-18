@@ -1,60 +1,50 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../../bower_components/app-layout/app-layout.html">
 
-<link rel="import" href="./pt-story-count.html">
-<link rel="import" href="./pt-story-type-chart.html">
-<link rel="import" href="./pt-feature-by-point.html">
-<link rel="import" href="./pt-feature-transition.html">
+<link rel="import" href="./project-dashboard.html">
+<link rel="import" href="./tracker-store.html">
+
+<!-- NOT IN USE
+  <link rel="import" href="./pt-story-count.html">
+  <link rel="import" href="./pt-story-type-chart.html">
+  <link rel="import" href="./pt-feature-by-point.html">
+  <link rel="import" href="./pt-feature-transition.html">
+-->
 
 <dom-module id="pt-insights-app">
   <template>
-    <style>
+    <style is="custom-style" include="app-grid-style">
       :host {
-        display: block;
         @apply(--paper-font-code1);
+
+        --paper-tabs: {
+           background-color: var(--google-blue-500);
+           color: white;
+        }
+
+        --paper-tabs-selection-bar-color: var(--google-red-700);
+
+        --app-grid-columns: 2;
+      }
+
+      ul {
+        list-style: none;
       }
     </style>
 
-    <iron-ajax
-      auto
-      url="{{jsonDataUrl}}"
-      last-response="{{data}}"
-      handle-as="json"
-    ></iron-ajax>
+    <h1>Development Report</h1>
 
-    <pt-story-count
-      stories="{{data}}"
-      bug-count="{{bugCount}}"
-      feature-count="{{featureCount}}"
-      chore-count="{{choreCount}}"
-    ></pt-story-count>
-
-    <!--
-      ANALYZE OUTPUTS
-    -->
-
-    <h2>SUMMARIZE ACCEPTED STORIES</h2>
-
-    <div>Bug Count: {{bugCount}}</div>
-    <div>Feature Count: {{featureCount}}</div>
-    <div>Chore Count: {{choreCount}}</div>
-    <div>TOTAL: {{total(bugCount, featureCount, choreCount)}}</div>
-
-    <pt-story-type-chart
-      bug-count="{{bugCount}}"
-      feature-count="{{featureCount}}"
-      chore-count="{{choreCount}}"
-    ></pt-story-type-chart>
-
-    <pt-feature-by-point
-      stories="{{data}}"
-      features="{{features}}"
-    ></pt-feature-by-point>
-
-    <pt-feature-transition
-      features="{{features}}"
-    ></pt-feature-transition>
+    <ul class="app-grid" has-aspect-ratio>
+      <template is="dom-repeat" items="[[projects]]" as="project" >
+        <li class="item">
+          <project-dashboard project="[[project]]"></project-dashboard>
+        </li>
+      </template>
+    </ul>
   </template>
 
   <script>
@@ -62,21 +52,45 @@
      * @customElement
      * @polymer
      */
-    class PtInsightsApp extends Polymer.Element {
+    class PtInsightsApp extends ReduxMixin(ReduxAsyncMixin(Polymer.Element)) {
       static get is() { return "pt-insights-app"; }
       static get properties() {
         return {
-          jsonDataUrl: {
-            type: String,
-            value: "/data/output.json"
+          projects: {
+            type: Array,
+            statePath: "projects"
+          },
+
+          engagerocketProject: {
+            type: Object,
+            value: {id: 1968099, name: "EngageRocket"}
+          },
+
+          fb360Project: {
+            type: Object,
+            value: {id: 2137949, name: "360"}
+          },
+
+          tabSelected: {
+            type: Number, value: 0
           }
         };
       }
 
-      total(...values) {
-        return _.reduce(values, function(sum, val) {
-          return sum + val;
-        }, 0)
+      connectedCallback() {
+        super.connectedCallback();
+
+        this.dispatch("addProject", this.engagerocketProject);
+
+        this.dispatch("addProject", this.fb360Project);
+
+        XHRRequester.generateRequest("/data/output-engagerocket.json", "GET", (success) => {
+          this.dispatch("pushProjectStories", success.response, this.engagerocketProject.id);
+        });
+
+        XHRRequester.generateRequest("/data/output-360.json", "GET", (success) => {
+          this.dispatch("pushProjectStories", success.response, this.fb360Project.id);
+        });
       }
     }
 

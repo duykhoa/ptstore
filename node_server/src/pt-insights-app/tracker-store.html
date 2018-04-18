@@ -1,0 +1,65 @@
+<link rel="import" href="../../bower_components/polymer-redux/polymer-redux.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<script src="../../node_modules/redux/dist/redux.js"></script>
+<script src="../../node_modules/redux-thunk/dist/redux-thunk.js"></script>
+<script src="/bower_components/lodash/lodash.js"></script>
+
+<script>
+  class XHRRequester {
+    static generateRequest(url, method, successCallback, failureCallback) {
+      let requester = document.createElement("iron-ajax");
+      requester.contentType = "application/json";
+      requester.handleAs = "json";
+      requester.url = url;
+      requester.method = method;
+
+      let request = requester.generateRequest();
+
+      request.completes.then((success) => {
+        successCallback(success);
+      }, (failure) => {
+        if (failureCallback)
+          failureCallback(failure);
+      })
+    }
+  }
+
+  const initialStateReview = {
+    projects: [],
+    projectStories: []
+  }
+
+  const store = Redux.createStore((state, action) => {
+    if (!state) return initialStateReview;
+
+    switch (action.type) {
+      case "ADD_PROJECT":
+        return _.assign({}, state, {projects: [...state.projects, action.project]});
+
+      case "PUSH_PROJECT_STORIES":
+        return _.assign({}, state, {
+          projectStories: [...state.projectStories, action.projectStories]
+        });
+      default:
+        return state;
+    }
+  }, Redux.applyMiddleware(ReduxThunk.default));
+
+  const ReduxMixin = PolymerRedux(store);
+
+  const ReduxAsyncMixin = (superclass) => {
+    return class extends superclass {
+      static get actions() {
+        return {
+          addProject(project) {
+            return (dispatch) => {dispatch({type: "ADD_PROJECT", project: project})};
+          },
+
+          pushProjectStories(stories, projectId) {
+            return (dispatch) => {dispatch({type: "PUSH_PROJECT_STORIES", projectStories: {projectId: projectId, stories: stories}})};
+          }
+        }
+      }
+    }
+  }
+</script>
