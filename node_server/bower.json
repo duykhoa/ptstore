@@ -14,7 +14,10 @@
     "polymer-redux": "^1.0.5",
     "paper-tabs": "^2.1.1",
     "iron-pages": "^2.1.1",
-    "app-layout": "^2.1.0"
+    "app-layout": "^2.1.0",
+    "vaadin-grid": "vaadin/vaadin-grid#^4.1.7",
+    "paper-checkbox": "^2.0.4",
+    "marked-element": "PolymerElements/marked-element#^2.4.0"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0",

@@ -1,5 +1,11 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/google-chart/google-chart.html">
+<link rel="import" href="../../bower_components/vaadin-grid/all-imports.html">
+<link rel="import" href="../../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../../bower_components/marked-element/marked-element.html">
+<link rel="import" href="../../bower_components/material-progress/material-progress.html">
+
+<link rel="import" href="../../bower_components/iron-icons/maps-icons.html">
 
 <link rel="import" href="./tracker-store.html">
 
@@ -9,15 +15,11 @@
       :host {
         display: block;
       }
-
-      google-chart {
-        height: 400px;
-        width: 400px;
-      }
     </style>
 
     <h1>[[project.name]]</h1>
-    <h3>Stories Summary</h3>
+
+    <h2>Stories Summary</h3>
 
     <div>No. Stories: [[stories.length]]</div>
     <div>No. Features: [[countStoryByType(stories, "feature")]]</div>
@@ -29,6 +31,76 @@
       data="{{rowsData(stories)}}"
       options="[[options]]"
     ></google-chart>
+
+    <details>
+      <summary>Stories list</summary>
+
+      <vaadin-grid items="[[stories]]">
+        <template class="row-details">
+          <div class="details">
+            <h5>
+              [[item.name]] | Estimate: [[item.estimate]] |
+              <a href$="[[item.url]]">Link</a>
+            </h5>
+
+            <marked-element markdown=[[item.description]] breaks></marked-element>
+
+            <h5>Duration: [[displayStoryDuration(item)]] | Point: [[item.estimate]]</h5>
+            <h5>Story transition</h5>
+
+            <ul>
+              <template is="dom-repeat" items="[[item.transitions]]">
+                <li>[[item.state]], [[formatTime(item.occurred_at)]]</li>
+              </template>
+            </ul>
+          </div>
+        </template>
+
+        <vaadin-grid-column>
+          <template class="header">Name</template>
+
+          <template>
+            <span>[[item.name]]</span>
+          </template>
+        </vaadin-grid-column>
+
+        <vaadin-grid-column flex-grow="0">
+          <template class="header">
+            <vaadin-grid-filter aria-label="Type" path="story_type" value="[[_filteredStoryType]]">
+               <vaadin-text-field slot="filter" placeholder="Story type" value="{{_filteredStoryType}}" focus-target></vaadin-text-field>
+            </vaadin-grid-filter>
+          </template>
+
+          <template>
+            <span>[[item.story_type]]</span>
+          </template>
+        </vaadin-grid-column>
+
+        <vaadin-grid-column flex-grow="0">
+          <template class="header">
+            <vaadin-grid-sorter path="estimate">Estimate</vaadin-grid-sorter>
+          </template>
+          <template>[[item.estimate]]</template>
+        </vaadin-grid-column>
+
+        <vaadin-grid-column width="50px" flex-grow="0">
+          <template>
+            <paper-checkbox checked="{{detailsOpened}}"></paper-checkbox>
+          </template>
+        </vaadin-grid-column>
+      </vaadin-grid>
+    </details>
+
+    <h2> Story activity </h2>
+    <div>
+      Rejection chart
+      <google-chart
+        type="line"
+        data="[[rejectedCount(stories)]]"
+      ></google-chart>
+
+    </div>
+
   </template>
 
   <script>
@@ -46,7 +118,6 @@
 
           projectStories: {
             type: Array,
-            observer: "_projectStoriesChanged",
             statePath: "projectStories"
           },
 
@@ -98,8 +169,49 @@
           return _projectStories.stories;
       }
 
-      _projectStoriesChanged(projectStories) {
-        console.log(projectStories);
+      formatTime(time) {
+        return moment(time).format("MMM Do YY");
+      }
+
+      averageDateToFinishStory(stories) {
+        let features = this.storyByType(stories, "feature");
+
+        let totalTime = _.sum(features, (feature) => {
+          return this.storyDuration(feature);
+        })
+      }
+
+      storyDuration(story) {
+        let transitions = story.transitions;
+        let startTransition = _.find(transitions, (tran) => {
+          return tran.state === "started";
+        });
+
+        let acceptedTransition = _.find(transitions, (tran) => {
+          return tran.state === "accepted";
+        });
+
+        return moment(acceptedTransition.occurred_at) - moment(startTransition.occurred_at);
+      }
+
+      displayStoryDuration(story) {
+        return moment.duration(this.storyDuration(story)).humanize();
+      }
+
+      rejectedCount(stories) {
+        let _rejectionCount = _.countBy(stories, (story) => {
+          return _.select(story.transitions, (tran) => {
+            return tran.state === "rejected";l
+          }).length
+        });
+
+
+        let result = [
+          ["Rejected times", "Story count"],
+          ..._.map(_rejectionCount, (k,v) => { return [v,k]; })
+        ];
+
+        return result;
       }
     }
 
